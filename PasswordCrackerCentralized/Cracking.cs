@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using PasswordCrackerCentralized.model;
 using PasswordCrackerCentralized.util;
 using System;
@@ -16,12 +18,42 @@ namespace PasswordCrackerCentralized
         /// </summary>
         private readonly HashAlgorithm _messageDigest;
 
+        private BlockingCollection<String> _dictionaryBuffer;
+
         public Cracking()
         {
             _messageDigest = new SHA1CryptoServiceProvider();
             //_messageDigest = new MD5CryptoServiceProvider();
             // seems to be same speed
         }
+
+        public void RunCracking2()
+        {
+            Stopwatch stopwatch = Stopwatch.StartNew();
+
+            List<UserInfo> userInfos = PasswordFileHandler.ReadPasswordFile("passwords.txt");
+            List<UserInfoClearText> result = new List<UserInfoClearText>();
+
+            _dictionaryBuffer = new BlockingCollection<string>();
+            Task dictionaryTask = new Task(() => DictionaryReader("webster-dictionary.txt", _dictionaryBuffer));
+            dictionaryTask.Start();
+
+
+        }
+
+        private void DictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
+        {
+            using (FileStream fs = new FileStream(dictionaryFileName, FileMode.Open, FileAccess.Read))
+            using (StreamReader dictionary = new StreamReader(fs))
+            {
+                while (!dictionary.EndOfStream)
+                {
+                    String dictionaryEntry = dictionary.ReadLine();
+                    dictionaryBuffer.Add(dictionaryEntry);
+                }
+            }
+        }
+
 
         /// <summary>
         /// Runs the password cracking algorithm
