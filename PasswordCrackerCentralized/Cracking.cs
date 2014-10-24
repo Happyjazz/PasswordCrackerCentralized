@@ -19,6 +19,7 @@ namespace PasswordCrackerCentralized
         private readonly HashAlgorithm _messageDigest;
 
         private BlockingCollection<String> _dictionaryBuffer;
+        private BlockingCollection<List<String>> _wordVariationsBuffer; 
 
         public Cracking()
         {
@@ -33,24 +34,83 @@ namespace PasswordCrackerCentralized
 
             List<UserInfo> userInfos = PasswordFileHandler.ReadPasswordFile("passwords.txt");
             List<UserInfoClearText> result = new List<UserInfoClearText>();
+            
+            List<Task> taskList = new List<Task>();
 
             _dictionaryBuffer = new BlockingCollection<string>();
-            Task dictionaryTask = new Task(() => DictionaryReader("webster-dictionary.txt", _dictionaryBuffer));
+            Task dictionaryTask = new Task(() => RunDictionaryReader("webster-dictionary.txt", _dictionaryBuffer));
             dictionaryTask.Start();
+            
+            taskList.Add(dictionaryTask);
 
+            //RunDictionaryReader("webster-dictionary.txt", _dictionaryBuffer);
 
+            _wordVariationsBuffer = new BlockingCollection<List<string>>();
+            Task checkVariations = Task.Run(() => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer));
+            taskList.Add(checkVariations);
         }
 
-        private void DictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
+        private void RunDictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
         {
+            Console.WriteLine("Rundictionary started");
             using (FileStream fs = new FileStream(dictionaryFileName, FileMode.Open, FileAccess.Read))
             using (StreamReader dictionary = new StreamReader(fs))
             {
                 while (!dictionary.EndOfStream)
                 {
                     String dictionaryEntry = dictionary.ReadLine();
+                    Console.WriteLine(dictionaryEntry);
                     dictionaryBuffer.Add(dictionaryEntry);
                 }
+                dictionaryBuffer.CompleteAdding();
+            }
+        }
+
+        private void RunWordVariationGenerator(BlockingCollection<String> dictionaryBuffer, BlockingCollection<List<String>> wordVariationBuffer)
+        {
+            while (!dictionaryBuffer.IsCompleted)
+            {
+                String dictionaryEntry = dictionaryBuffer.Take();
+
+                List<String> wordList = new List<string>();
+
+                String possiblePassword = dictionaryEntry;
+                wordList.Add(possiblePassword);
+
+                String possiblePasswordUpperCase = dictionaryEntry.ToUpper();
+                wordList.Add(possiblePasswordUpperCase);
+
+
+                String possiblePasswordCapitalized = StringUtilities.Capitalize(dictionaryEntry);
+                wordList.Add(possiblePasswordCapitalized);
+
+                String possiblePasswordReverse = StringUtilities.Reverse(dictionaryEntry);
+                wordList.Add(possiblePasswordReverse);
+
+                for (int i = 0; i < 100; i++)
+                {
+                    String possiblePasswordEndDigit = dictionaryEntry + i;
+                    wordList.Add(possiblePasswordEndDigit);
+                }
+
+                for (int i = 0; i < 100; i++)
+                {
+                    String possiblePasswordStartDigit = i + dictionaryEntry;
+                    wordList.Add(possiblePasswordStartDigit);
+                }
+
+                for (int i = 0; i < 10; i++)
+                {
+                    for (int j = 0; j < 10; j++)
+                    {
+                        String possiblePasswordStartEndDigit = i + dictionaryEntry + j;
+                        wordList.Add(possiblePasswordStartEndDigit);
+                    }
+                }
+
+                Console.WriteLine(wordList.ToString());
+                
+                wordVariationBuffer.Add(wordList);
             }
         }
 
@@ -58,27 +118,27 @@ namespace PasswordCrackerCentralized
         /// <summary>
         /// Runs the password cracking algorithm
         /// </summary>
-        public void RunCracking()
-        {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+        //public void RunCracking()
+        //{
+        //    Stopwatch stopwatch = Stopwatch.StartNew();
 
-            List<UserInfo> userInfos =
-                PasswordFileHandler.ReadPasswordFile("passwords.txt");
-            List<UserInfoClearText> result = new List<UserInfoClearText>();
-            using (FileStream fs = new FileStream("webster-dictionary.txt", FileMode.Open, FileAccess.Read))
-            using (StreamReader dictionary = new StreamReader(fs))
-            {
-                while (!dictionary.EndOfStream)
-                {
-                    String dictionaryEntry = dictionary.ReadLine();
-                    IEnumerable<UserInfoClearText> partialResult = CheckWordWithVariations(dictionaryEntry, userInfos);
-                    result.AddRange(partialResult);
-                }
-            }
-            stopwatch.Stop();
-            Console.WriteLine(string.Join(", ", result));
-            Console.WriteLine("Time elapsed: {0}", stopwatch.Elapsed);
-        }
+        //    List<UserInfo> userInfos =
+        //        PasswordFileHandler.ReadPasswordFile("passwords.txt");
+        //    List<UserInfoClearText> result = new List<UserInfoClearText>();
+        //    using (FileStream fs = new FileStream("webster-dictionary.txt", FileMode.Open, FileAccess.Read))
+        //    using (StreamReader dictionary = new StreamReader(fs))
+        //    {
+        //        while (!dictionary.EndOfStream)
+        //        {
+        //            String dictionaryEntry = dictionary.ReadLine();
+        //            IEnumerable<UserInfoClearText> partialResult = CheckWordWithVariations(dictionaryEntry, userInfos);
+        //            result.AddRange(partialResult);
+        //        }
+        //    }
+        //    stopwatch.Stop();
+        //    Console.WriteLine(string.Join(", ", result));
+        //    Console.WriteLine("Time elapsed: {0}", stopwatch.Elapsed);
+        //}
 
         /// <summary>
         /// Generates a lot of variations, encrypts each of the and compares it to all entries in the password file

@@ -1,11 +1,21 @@
-﻿namespace PasswordCrackerCentralized
+﻿using System;
+
+namespace PasswordCrackerCentralized
 {
     class Program
     {
         static void Main()
         {
-            Cracking cracker = new Cracking();
-            cracker.RunCracking();
+            try
+            {
+                Cracking cracker = new Cracking();
+                cracker.RunCracking2();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            
         }
     }
 }
