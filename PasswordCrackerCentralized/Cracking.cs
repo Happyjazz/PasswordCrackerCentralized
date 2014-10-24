@@ -48,6 +48,8 @@ namespace PasswordCrackerCentralized
             _wordVariationsBuffer = new BlockingCollection<List<string>>();
             Task checkVariations = Task.Run(() => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer));
             taskList.Add(checkVariations);
+
+            Task.WaitAll(taskList.ToArray());
         }
 
         private void RunDictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
@@ -59,7 +61,6 @@ namespace PasswordCrackerCentralized
                 while (!dictionary.EndOfStream)
                 {
                     String dictionaryEntry = dictionary.ReadLine();
-                    Console.WriteLine(dictionaryEntry);
                     dictionaryBuffer.Add(dictionaryEntry);
                 }
                 dictionaryBuffer.CompleteAdding();
