@@ -67,10 +67,7 @@ namespace PasswordCrackerCentralized
                         CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers));
             taskList.Add(compareEncryptedWords);
 
-
-
-
-            Task bufferStatusTask = Task.Run(() => BufferStatus());
+            Task bufferStatusTask = Task.Run(() => BufferStatus(_crackedUsers));
             taskList.Add(bufferStatusTask);
 
             Task.WaitAll(taskList.ToArray());
@@ -136,6 +133,8 @@ namespace PasswordCrackerCentralized
             wordVariationBuffer.CompleteAdding();
         }
 
+        
+
         private void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<EncryptedWord> encryptedWordBuffer)
         {
             while (!wordVariationBuffer.IsCompleted)
@@ -152,7 +151,7 @@ namespace PasswordCrackerCentralized
 
         }
 
-        private void BufferStatus()
+        private void BufferStatus(BlockingCollection<UserInfoClearText> crackedUsers)
         {
             while (!_dictionaryBuffer.IsCompleted && !_wordVariationsBuffer.IsCompleted && !_encryptedWordBuffer.IsCompleted && !_crackedUsers.IsCompleted)
             {
@@ -164,8 +163,11 @@ namespace PasswordCrackerCentralized
                 Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
                 Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsers.Count);
                 Console.WriteLine("Time elapsed: \t\t{0}", stopwatch.Elapsed);
-
-                Thread.Sleep(10000);
+                foreach (var e in crackedUsers)
+                {
+                    Console.WriteLine(string.Join(", ", e.ToString()));
+                }
+                Thread.Sleep(1000);
             }
             Console.Clear();
             Console.WriteLine("Buffer Name \t\tWords in buffer");
