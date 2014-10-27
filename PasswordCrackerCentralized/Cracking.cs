@@ -23,7 +23,7 @@ namespace PasswordCrackerCentralized
 
         private BlockingCollection<String> _dictionaryBuffer;
         private BlockingCollection<String> _wordVariationsBuffer;
-        private BlockingCollection<Byte[]> _encryptedWordBuffer;
+        private BlockingCollection<EncryptedWord> _encryptedWordBuffer;
         private BlockingCollection<UserInfoClearText> _crackedUsers;
 
         public Cracking()
@@ -42,7 +42,7 @@ namespace PasswordCrackerCentralized
             
             List<Task> taskList = new List<Task>();
 
-            _dictionaryBuffer = new BlockingCollection<string>();
+            _dictionaryBuffer = new BlockingCollection<string>(1000000);
             Task dictionaryTask = new Task(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer));
             dictionaryTask.Start();
             
@@ -50,15 +50,15 @@ namespace PasswordCrackerCentralized
 
             //RunDictionaryReader("webster-dictionary.txt", _dictionaryBuffer);
 
-            _wordVariationsBuffer = new BlockingCollection<string>();
+            _wordVariationsBuffer = new BlockingCollection<string>(1000000);
             Task checkVariations = Task.Run(() => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer));
             taskList.Add(checkVariations);
 
-            _encryptedWordBuffer = new BlockingCollection<byte[]>();
+            _encryptedWordBuffer = new BlockingCollection<EncryptedWord>(1000000);
             Task encryptWords = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
             taskList.Add(encryptWords);
 
-            _crackedUsers = new BlockingCollection<UserInfoClearText>();
+            _crackedUsers = new BlockingCollection<UserInfoClearText>(1000000);
             Task compareEncryptedWords =
                 Task.Run(
                     () =>
@@ -131,7 +131,7 @@ namespace PasswordCrackerCentralized
             }
         }
 
-        private void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<Byte[]> encryptedWordBuffer)
+        private void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<EncryptedWord> encryptedWordBuffer)
         {
             while (!wordVariationBuffer.IsCompleted)
             {
@@ -140,8 +140,8 @@ namespace PasswordCrackerCentralized
                 byte[] passwordAsBytes = Array.ConvertAll(charArray, PasswordFileHandler.GetConverter());
                 byte[] encryptedPassword = _messageDigest.ComputeHash(passwordAsBytes);
                 //string encryptedPasswordBase64 = System.Convert.ToBase64String(encryptedPassword);
-
-                encryptedWordBuffer.Add(encryptedPassword);
+                EncryptedWord encryptedWord = new EncryptedWord(encryptedPassword, currentWord);
+                encryptedWordBuffer.Add(encryptedWord);
             }
             
         }
@@ -156,24 +156,28 @@ namespace PasswordCrackerCentralized
                 Console.WriteLine("DictionaryBuffer: \t{0}",_dictionaryBuffer.Count);
                 Console.WriteLine("WordVariationBuffer: \t{0}", _wordVariationsBuffer.Count);
                 Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
-                Console.WriteLine("CrackedUsersBuffer: \t{0}", _encryptedWordBuffer.Count);
+                Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsers.Count);
 
                 Thread.Sleep(1000);
             }
         }
 
-        private void CompareEncryptedPassword(BlockingCollection<Byte[]> encryptedWordBuffer, IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers)
+        private void CompareEncryptedPassword(BlockingCollection<EncryptedWord> encryptedWordBuffer, IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers)
         {
-            foreach (UserInfo userInfo in userInfos)
+            while (!encryptedWordBuffer.IsCompleted)
             {
-                string possiblePassword = _encryptedWordBuffer.Take().ToString();
-                byte[] possiblePasswordBytes = Array.ConvertAll(possiblePassword.ToCharArray(),
-                    PasswordFileHandler.GetConverter());
-                if (CompareBytes(userInfo.EntryptedPassword, possiblePasswordBytes))
+                EncryptedWord encryptedWord = encryptedWordBuffer.Take();
+                byte[] possiblePassword = encryptedWord.EncryptedWordInBytes;
+
+                foreach (UserInfo userInfo in userInfos)
                 {
-                    crackedUsers.Add(new UserInfoClearText(userInfo.Username, possiblePassword));
+                    if (CompareBytes(userInfo.EntryptedPassword, possiblePassword))
+                    {
+                        crackedUsers.Add(new UserInfoClearText(userInfo.Username, encryptedWord.UnencryptedWord));
+                    }
                 }
             }
+            
         }
 
 
