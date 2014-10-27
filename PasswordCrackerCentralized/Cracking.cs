@@ -65,10 +65,6 @@ namespace PasswordCrackerCentralized
                         CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers));
             taskList.Add(compareEncryptedWords);
 
-
-            Task Print = Task.Run(() => this.Print(result, _crackedUsers));
-            taskList.Add(Print);
-
             Task bufferStatusTask = Task.Run(() => BufferStatus(_crackedUsers));
             taskList.Add(bufferStatusTask);
 
@@ -132,14 +128,7 @@ namespace PasswordCrackerCentralized
             }
         }
 
-        private void Print(List<UserInfoClearText> result, BlockingCollection<UserInfoClearText> crackedUsers)
-        {
-            while (!crackedUsers.IsCompleted)
-            {
-                Console.WriteLine(string.Join(", ", result));
-            }
-            
-        }
+        
 
         private void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<EncryptedWord> encryptedWordBuffer)
         {
