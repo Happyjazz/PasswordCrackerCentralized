@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Security.AccessControl;
+using System.Threading;
 using System.Threading.Tasks;
 using PasswordCrackerCentralized.model;
 using PasswordCrackerCentralized.util;
@@ -30,17 +32,17 @@ namespace PasswordCrackerCentralized
             // seems to be same speed
         }
 
-        public void RunCracking2()
+        public void RunCracking2(String fileName, String dictionaryFileName)
         {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            List<UserInfo> userInfos = PasswordFileHandler.ReadPasswordFile("passwords.txt");
+            List<UserInfo> userInfos = PasswordFileHandler.ReadPasswordFile(fileName);
             List<UserInfoClearText> result = new List<UserInfoClearText>();
             
             List<Task> taskList = new List<Task>();
 
             _dictionaryBuffer = new BlockingCollection<string>();
-            Task dictionaryTask = new Task(() => RunDictionaryReader("webster-dictionary.txt", _dictionaryBuffer));
+            Task dictionaryTask = new Task(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer));
             dictionaryTask.Start();
             
             taskList.Add(dictionaryTask);
@@ -55,6 +57,11 @@ namespace PasswordCrackerCentralized
             Task encryptWords = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
             taskList.Add(encryptWords);
 
+
+
+
+            Task bufferStatusTask = Task.Run(() => BufferStatus());
+            taskList.Add(bufferStatusTask);
 
             Task.WaitAll(taskList.ToArray());
         }
@@ -131,6 +138,20 @@ namespace PasswordCrackerCentralized
             
         }
 
+        private void BufferStatus()
+        {
+            while (!_dictionaryBuffer.IsCompleted && !_wordVariationsBuffer.IsCompleted && !_encryptedWordBuffer.IsCompleted)
+            {
+                Console.Clear();
+                Console.WriteLine("Buffer Name \t\tWords in buffer");
+                Console.WriteLine("---------------------------------------");
+                Console.WriteLine("DictionaryBuffer: \t{0}",_dictionaryBuffer.Count);
+                Console.WriteLine("WordVariationBuffer: \t{0}", _wordVariationsBuffer.Count);
+                Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
+                
+                Thread.Sleep(1000);
+            }
+        }
 
         /// <summary>
         /// Runs the password cracking algorithm
