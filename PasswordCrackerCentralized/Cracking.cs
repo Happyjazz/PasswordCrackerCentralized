@@ -21,7 +21,7 @@ namespace PasswordCrackerCentralized
         private BlockingCollection<String> _dictionaryBuffer;
         private BlockingCollection<String> _wordVariationsBuffer;
         private BlockingCollection<Byte[]> _encryptedWordBuffer;
-        private BlockingCollection<IEnumerable<UserInfoClearText>> _crackedUsers;
+        private BlockingCollection<UserInfoClearText> _crackedUsers;
 
         public Cracking()
         {
@@ -54,6 +54,13 @@ namespace PasswordCrackerCentralized
             _encryptedWordBuffer = new BlockingCollection<byte[]>();
             Task encryptWords = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
             taskList.Add(encryptWords);
+
+            _crackedUsers = new BlockingCollection<UserInfoClearText>();
+            Task compareEncryptedWords =
+                Task.Run(
+                    () =>
+                        CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers, _wordVariationsBuffer));
+            taskList.Add(compareEncryptedWords);
 
 
             Task.WaitAll(taskList.ToArray());
@@ -129,6 +136,18 @@ namespace PasswordCrackerCentralized
                 encryptedWordBuffer.Add(encryptedPassword);
             }
             
+        }
+
+
+        private void CompareEncryptedPassword(BlockingCollection<Byte[]> encryptedWordBuffer, IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers, BlockingCollection<string> possiblePassword)
+        {
+            foreach (UserInfo userInfo in userInfos)
+            {
+                if (CompareBytes(userInfo.EntryptedPassword, encryptedWordBuffer.Take()))
+                {
+                    crackedUsers.Add(new UserInfoClearText(userInfo.Username, possiblePassword.ToString()));
+                }
+            }
         }
 
 
