@@ -19,7 +19,9 @@ namespace PasswordCrackerCentralized
         private readonly HashAlgorithm _messageDigest;
 
         private BlockingCollection<String> _dictionaryBuffer;
-        private BlockingCollection<List<String>> _wordVariationsBuffer; 
+        private BlockingCollection<String> _wordVariationsBuffer;
+        private BlockingCollection<Byte[]> _encryptedWordBuffer;
+        private BlockingCollection<IEnumerable<UserInfoClearText>> _crackedUsers;
 
         public Cracking()
         {
@@ -45,9 +47,14 @@ namespace PasswordCrackerCentralized
 
             //RunDictionaryReader("webster-dictionary.txt", _dictionaryBuffer);
 
-            _wordVariationsBuffer = new BlockingCollection<List<string>>();
+            _wordVariationsBuffer = new BlockingCollection<string>();
             Task checkVariations = Task.Run(() => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer));
             taskList.Add(checkVariations);
+
+            _encryptedWordBuffer = new BlockingCollection<byte[]>();
+            Task encryptWords = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
+            taskList.Add(encryptWords);
+
 
             Task.WaitAll(taskList.ToArray());
         }
@@ -67,37 +74,35 @@ namespace PasswordCrackerCentralized
             }
         }
 
-        private void RunWordVariationGenerator(BlockingCollection<String> dictionaryBuffer, BlockingCollection<List<String>> wordVariationBuffer)
+        private void RunWordVariationGenerator(BlockingCollection<String> dictionaryBuffer, BlockingCollection<String> wordVariationBuffer)
         {
             while (!dictionaryBuffer.IsCompleted)
             {
                 String dictionaryEntry = dictionaryBuffer.Take();
 
-                List<String> wordList = new List<string>();
-
                 String possiblePassword = dictionaryEntry;
-                wordList.Add(possiblePassword);
+                wordVariationBuffer.Add(possiblePassword);
 
                 String possiblePasswordUpperCase = dictionaryEntry.ToUpper();
-                wordList.Add(possiblePasswordUpperCase);
+                wordVariationBuffer.Add(possiblePasswordUpperCase);
 
 
                 String possiblePasswordCapitalized = StringUtilities.Capitalize(dictionaryEntry);
-                wordList.Add(possiblePasswordCapitalized);
+                wordVariationBuffer.Add(possiblePasswordCapitalized);
 
                 String possiblePasswordReverse = StringUtilities.Reverse(dictionaryEntry);
-                wordList.Add(possiblePasswordReverse);
+                wordVariationBuffer.Add(possiblePasswordReverse);
 
                 for (int i = 0; i < 100; i++)
                 {
                     String possiblePasswordEndDigit = dictionaryEntry + i;
-                    wordList.Add(possiblePasswordEndDigit);
+                    wordVariationBuffer.Add(possiblePasswordEndDigit);
                 }
 
                 for (int i = 0; i < 100; i++)
                 {
                     String possiblePasswordStartDigit = i + dictionaryEntry;
-                    wordList.Add(possiblePasswordStartDigit);
+                    wordVariationBuffer.Add(possiblePasswordStartDigit);
                 }
 
                 for (int i = 0; i < 10; i++)
@@ -105,14 +110,25 @@ namespace PasswordCrackerCentralized
                     for (int j = 0; j < 10; j++)
                     {
                         String possiblePasswordStartEndDigit = i + dictionaryEntry + j;
-                        wordList.Add(possiblePasswordStartEndDigit);
+                        wordVariationBuffer.Add(possiblePasswordStartEndDigit);
                     }
                 }
-
-                Console.WriteLine(wordList.ToString());
-                
-                wordVariationBuffer.Add(wordList);
             }
+        }
+
+        private void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<Byte[]> encryptedWordBuffer)
+        {
+            while (!wordVariationBuffer.IsCompleted)
+            {
+                String currentWord = wordVariationBuffer.Take();
+                char[] charArray = currentWord.ToCharArray();
+                byte[] passwordAsBytes = Array.ConvertAll(charArray, PasswordFileHandler.GetConverter());
+                byte[] encryptedPassword = _messageDigest.ComputeHash(passwordAsBytes);
+                //string encryptedPasswordBase64 = System.Convert.ToBase64String(encryptedPassword);
+
+                encryptedWordBuffer.Add(encryptedPassword);
+            }
+            
         }
 
 
