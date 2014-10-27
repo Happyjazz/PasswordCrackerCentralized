@@ -147,7 +147,7 @@ namespace PasswordCrackerCentralized
 
         private void BufferStatus()
         {
-            while (!_dictionaryBuffer.IsCompleted && !_wordVariationsBuffer.IsCompleted && !_encryptedWordBuffer.IsCompleted)
+            while (!_dictionaryBuffer.IsCompleted && !_wordVariationsBuffer.IsCompleted && !_encryptedWordBuffer.IsCompleted && !_crackedUsers.IsCompleted)
             {
                 Console.Clear();
                 Console.WriteLine("Buffer Name \t\tWords in buffer");
@@ -155,7 +155,8 @@ namespace PasswordCrackerCentralized
                 Console.WriteLine("DictionaryBuffer: \t{0}",_dictionaryBuffer.Count);
                 Console.WriteLine("WordVariationBuffer: \t{0}", _wordVariationsBuffer.Count);
                 Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
-                
+                Console.WriteLine("CrackedUsersBuffer: \t{0}", _encryptedWordBuffer.Count);
+
                 Thread.Sleep(1000);
             }
         }
