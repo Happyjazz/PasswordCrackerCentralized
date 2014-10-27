@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,7 +62,7 @@ namespace PasswordCrackerCentralized
             Task compareEncryptedWords =
                 Task.Run(
                     () =>
-                        CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers, _wordVariationsBuffer));
+                        CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers));
             taskList.Add(compareEncryptedWords);
 
 
@@ -160,13 +161,16 @@ namespace PasswordCrackerCentralized
             }
         }
 
-        private void CompareEncryptedPassword(BlockingCollection<Byte[]> encryptedWordBuffer, IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers, BlockingCollection<string> possiblePassword)
+        private void CompareEncryptedPassword(BlockingCollection<Byte[]> encryptedWordBuffer, IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers)
         {
             foreach (UserInfo userInfo in userInfos)
             {
-                if (CompareBytes(userInfo.EntryptedPassword, encryptedWordBuffer.Take()))
+                string possiblePassword = _encryptedWordBuffer.Take().ToString();
+                byte[] possiblePasswordBytes = Array.ConvertAll(possiblePassword.ToCharArray(),
+                    PasswordFileHandler.GetConverter());
+                if (CompareBytes(userInfo.EntryptedPassword, possiblePasswordBytes))
                 {
-                    crackedUsers.Add(new UserInfoClearText(userInfo.Username, possiblePassword.ToString()));
+                    crackedUsers.Add(new UserInfoClearText(userInfo.Username, possiblePassword));
                 }
             }
         }
