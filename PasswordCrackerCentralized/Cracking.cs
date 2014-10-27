@@ -26,6 +26,8 @@ namespace PasswordCrackerCentralized
         private BlockingCollection<EncryptedWord> _encryptedWordBuffer;
         private BlockingCollection<UserInfoClearText> _crackedUsers;
 
+        private Stopwatch stopwatch;
+
         public Cracking()
         {
             _messageDigest = new SHA1CryptoServiceProvider();
@@ -35,7 +37,7 @@ namespace PasswordCrackerCentralized
 
         public void RunCracking2(String fileName, String dictionaryFileName)
         {
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            stopwatch = Stopwatch.StartNew();
 
             List<UserInfo> userInfos = PasswordFileHandler.ReadPasswordFile(fileName);
             List<UserInfoClearText> result = new List<UserInfoClearText>();
@@ -72,6 +74,8 @@ namespace PasswordCrackerCentralized
             taskList.Add(bufferStatusTask);
 
             Task.WaitAll(taskList.ToArray());
+            stopwatch.Stop();
+            BufferStatus();
         }
 
         private void RunDictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
@@ -129,6 +133,7 @@ namespace PasswordCrackerCentralized
                     }
                 }
             }
+            wordVariationBuffer.CompleteAdding();
         }
 
         private void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<EncryptedWord> encryptedWordBuffer)
@@ -143,7 +148,8 @@ namespace PasswordCrackerCentralized
                 EncryptedWord encryptedWord = new EncryptedWord(encryptedPassword, currentWord);
                 encryptedWordBuffer.Add(encryptedWord);
             }
-            
+            encryptedWordBuffer.CompleteAdding();
+
         }
 
         private void BufferStatus()
@@ -157,9 +163,19 @@ namespace PasswordCrackerCentralized
                 Console.WriteLine("WordVariationBuffer: \t{0}", _wordVariationsBuffer.Count);
                 Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
                 Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsers.Count);
+                Console.WriteLine("Time elapsed: \t\t{0}", stopwatch.Elapsed);
 
-                Thread.Sleep(1000);
+                Thread.Sleep(10000);
             }
+            Console.Clear();
+            Console.WriteLine("Buffer Name \t\tWords in buffer");
+            Console.WriteLine("---------------------------------------");
+            Console.WriteLine("DictionaryBuffer: \t{0}", _dictionaryBuffer.Count);
+            Console.WriteLine("WordVariationBuffer: \t{0}", _wordVariationsBuffer.Count);
+            Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
+            Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsers.Count);
+
+            Console.WriteLine("Time elapsed: \t\t{0}", stopwatch.Elapsed);
         }
 
         private void CompareEncryptedPassword(BlockingCollection<EncryptedWord> encryptedWordBuffer, IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers)
@@ -177,6 +193,7 @@ namespace PasswordCrackerCentralized
                     }
                 }
             }
+            crackedUsers.CompleteAdding();
             
         }
 
