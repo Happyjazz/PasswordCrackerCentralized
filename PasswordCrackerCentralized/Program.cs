@@ -9,7 +9,7 @@ namespace PasswordCrackerCentralized
             try
             {
                 Cracking cracker = new Cracking();
-                cracker.RunCracking2("passwords.txt", "webster-dictionary.txt");
+                cracker.RunCracking("passwords.txt", "webster-dictionary.txt");
             }
             catch (Exception ex)
             {
