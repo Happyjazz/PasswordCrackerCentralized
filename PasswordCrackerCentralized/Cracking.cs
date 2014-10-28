@@ -21,10 +21,10 @@ namespace PasswordCrackerCentralized
         /// </summary>
         private readonly HashAlgorithm _messageDigest;
 
-        private BlockingCollection<String> _dictionaryBuffer;
-        private BlockingCollection<String> _wordVariationsBuffer;
-        private BlockingCollection<EncryptedWord> _encryptedWordBuffer;
-        private BlockingCollection<UserInfoClearText> _crackedUsers;
+        protected BlockingCollection<String> _dictionaryBuffer;
+        protected BlockingCollection<String> _wordVariationsBuffer;
+        protected BlockingCollection<EncryptedWord> _encryptedWordBuffer;
+        protected BlockingCollection<UserInfoClearText> _crackedUsers;
 
         private Stopwatch stopwatch;
 
@@ -80,7 +80,7 @@ namespace PasswordCrackerCentralized
             Console.ReadLine();
         }
 
-        private void RunDictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
+        protected void RunDictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
         {
             Console.WriteLine("Rundictionary started");
             using (FileStream fs = new FileStream(dictionaryFileName, FileMode.Open, FileAccess.Read))

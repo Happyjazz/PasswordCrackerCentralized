@@ -8,7 +8,7 @@ namespace UnitTestPasswordCrackerCentralized
     [TestClass]
     public class UnitTest1
     {
-        private Cracking cracker;
+        private Cracking_Test testClass;
 
         [ClassInitialize]
         public void ClassInitializer()
@@ -26,13 +26,12 @@ namespace UnitTestPasswordCrackerCentralized
             passwords[3] = "Womanbody";
 
             PasswordFileHandler.WritePasswordFile("testPasswords.txt", usernames, passwords);
-            cracker = new Cracking();
+            testClass = new Cracking_Test();
         }
 
         [TestMethod]
-        public void TestCracker()
+        public void TestDictionaryReader()
         {
-            cracker.RunCracking("testPasswords.txt", "webster-dictionary-reduced.txt");
 
             //Assert.AreEqual();
 

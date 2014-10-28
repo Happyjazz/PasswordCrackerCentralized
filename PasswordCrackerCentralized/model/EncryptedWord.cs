@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PasswordCrackerCentralized.model
 {
-    class EncryptedWord
+    public class EncryptedWord
     {
         public byte[] EncryptedWordInBytes { get; set; }
         public String UnencryptedWord { get; set; }
