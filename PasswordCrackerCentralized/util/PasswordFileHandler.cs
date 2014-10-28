@@ -6,7 +6,7 @@ using PasswordCrackerCentralized.model;
 
 namespace PasswordCrackerCentralized.util
 {
-    class PasswordFileHandler
+    public class PasswordFileHandler
     {
         private static readonly Converter<char, byte> Converter = CharToByte;
 
@@ -20,10 +20,10 @@ namespace PasswordCrackerCentralized.util
         public static void WritePasswordFile(String filename, String[] usernames, String[] passwords)
         {
             HashAlgorithm messageDigest = new SHA1CryptoServiceProvider();
-            if (usernames.Length != passwords.Length)
-            {
-                throw new ArgumentException("usernames and passwords must be same lengths");
-            }
+            //if (usernames.Length != passwords.Length)
+            //{
+            //    throw new ArgumentException("usernames and passwords must be same lengths");
+            //}
             using (FileStream fs = new FileStream(filename, FileMode.CreateNew, FileAccess.Write))
             using (StreamWriter sw = new StreamWriter(fs))
             {

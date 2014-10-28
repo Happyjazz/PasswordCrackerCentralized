@@ -15,7 +15,6 @@ namespace PasswordCrackerCentralized
             {
                 Console.WriteLine(ex.Message);
             }
-            
         }
     }
 }
