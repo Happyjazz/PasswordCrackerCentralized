@@ -30,9 +30,6 @@ namespace PasswordCrackerCentralized
 
         public Cracking()
         {
-            _messageDigest = new SHA1CryptoServiceProvider();
-            //_messageDigest = new MD5CryptoServiceProvider();
-            // seems to be same speed
         }
 
         /// <summary>
@@ -41,28 +38,34 @@ namespace PasswordCrackerCentralized
         public void RunCracking(String fileName, String dictionaryFileName)
         {
             stopwatch = Stopwatch.StartNew();
-            int bufferSize = 10000;
+            int bufferSize = 1000000;
 
             List<UserInfo> userInfos = PasswordFileHandler.ReadPasswordFile(fileName);
-            List<UserInfoClearText> result = new List<UserInfoClearText>();
-            
             List<Task> taskList = new List<Task>();
 
             _dictionaryBuffer = new BlockingCollection<string>(bufferSize);
-            Task dictionaryTask = new Task(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer));
-            dictionaryTask.Start();
-            
+            Task dictionaryTask = Task.Run(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer));
             taskList.Add(dictionaryTask);
-
-            //RunDictionaryReader("webster-dictionary.txt", _dictionaryBuffer);
 
             _wordVariationsBuffer = new BlockingCollection<string>(bufferSize);
             Task checkVariations = Task.Run(() => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer));
             taskList.Add(checkVariations);
 
             _encryptedWordBuffer = new BlockingCollection<EncryptedWord>(bufferSize);
-            Task encryptWords = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
-            taskList.Add(encryptWords);
+            Task encryptWords1 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
+            taskList.Add(encryptWords1);
+
+            Task encryptWords2 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
+            taskList.Add(encryptWords2);
+
+            Task encryptWords3 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
+            taskList.Add(encryptWords3);
+            
+            Task encryptWords4 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
+            taskList.Add(encryptWords4);
+
+            Task encryptWords5 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
+            taskList.Add(encryptWords5);
 
             _crackedUsers = new BlockingCollection<UserInfoClearText>();
             Task compareEncryptedWords =
@@ -73,6 +76,7 @@ namespace PasswordCrackerCentralized
 
             Task bufferStatusTask = Task.Run(() => BufferStatus());
             taskList.Add(bufferStatusTask);
+
 
             Task.WaitAll(taskList.ToArray());
             stopwatch.Stop();
@@ -149,12 +153,13 @@ namespace PasswordCrackerCentralized
 
         protected void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<EncryptedWord> encryptedWordBuffer)
         {
+            HashAlgorithm messageDigest = new SHA1CryptoServiceProvider();
             while (!wordVariationBuffer.IsCompleted)
             {
                 String currentWord = wordVariationBuffer.Take();
                 char[] charArray = currentWord.ToCharArray();
                 byte[] passwordAsBytes = Array.ConvertAll(charArray, PasswordFileHandler.GetConverter());
-                byte[] encryptedPassword = _messageDigest.ComputeHash(passwordAsBytes);
+                byte[] encryptedPassword = messageDigest.ComputeHash(passwordAsBytes);
                 //string encryptedPasswordBase64 = System.Convert.ToBase64String(encryptedPassword);
                 EncryptedWord encryptedWord = new EncryptedWord(encryptedPassword, currentWord);
                 encryptedWordBuffer.Add(encryptedWord);
@@ -254,14 +259,6 @@ namespace PasswordCrackerCentralized
         /// <returns></returns>
         private static bool CompareBytes(IList<byte> firstArray, IList<byte> secondArray)
         {
-            //if (secondArray == null)
-            //{
-            //    throw new ArgumentNullException("firstArray");
-            //}
-            //if (secondArray == null)
-            //{
-            //    throw new ArgumentNullException("secondArray");
-            //}
             if (firstArray.Count != secondArray.Count)
             {
                 return false;
