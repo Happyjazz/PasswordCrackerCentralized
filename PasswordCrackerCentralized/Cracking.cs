@@ -19,7 +19,7 @@ namespace PasswordCrackerCentralized
         /// The algorithm used for encryption.
         /// Must be exactly the same algorithm that was used to encrypt the passwords in the password file
         /// </summary>
-        private readonly HashAlgorithm _messageDigest;
+        //private HashAlgorithm _messageDigest;
 
         protected BlockingCollection<String> _dictionaryBuffer;
         protected BlockingCollection<String> _wordVariationsBuffer;
@@ -30,9 +30,6 @@ namespace PasswordCrackerCentralized
 
         public Cracking()
         {
-            _messageDigest = new SHA1CryptoServiceProvider();
-            //_messageDigest = new MD5CryptoServiceProvider();
-            // seems to be same speed
         }
 
         /// <summary>
@@ -46,16 +43,13 @@ namespace PasswordCrackerCentralized
             List<UserInfo> userInfos = PasswordFileHandler.ReadPasswordFile(fileName);
             List<UserInfoClearText> result = new List<UserInfoClearText>();
             
-            List<Task> taskList = new List<Task>();
-
             _dictionaryBuffer = new BlockingCollection<string>(bufferSize);
             _wordVariationsBuffer = new BlockingCollection<string>(bufferSize);
             _encryptedWordBuffer = new BlockingCollection<EncryptedWord>(bufferSize);
             _crackedUsers = new BlockingCollection<UserInfoClearText>();
 
-            Parallel.Invoke(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer), () => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () =>
+            Parallel.Invoke(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer), () => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () =>
                         CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers), BufferStatus);
-            
             
             stopwatch.Stop();
             BufferStatus();
@@ -131,6 +125,7 @@ namespace PasswordCrackerCentralized
 
         protected void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<EncryptedWord> encryptedWordBuffer)
         {
+            HashAlgorithm _messageDigest = new SHA1CryptoServiceProvider();
             while (!wordVariationBuffer.IsCompleted)
             {
                 String currentWord = wordVariationBuffer.Take();
@@ -236,14 +231,6 @@ namespace PasswordCrackerCentralized
         /// <returns></returns>
         private static bool CompareBytes(IList<byte> firstArray, IList<byte> secondArray)
         {
-            //if (secondArray == null)
-            //{
-            //    throw new ArgumentNullException("firstArray");
-            //}
-            //if (secondArray == null)
-            //{
-            //    throw new ArgumentNullException("secondArray");
-            //}
             if (firstArray.Count != secondArray.Count)
             {
                 return false;
