@@ -22,7 +22,7 @@ namespace UnitTestPasswordCrackerCentralized
             //usernames[1] = "Martin";
             //usernames[2] = "Delfs";
             //usernames[3] = "Brian";
-            
+
             //string[] passwords = new string[4];
             //passwords[0] = "95Melanochroi5";
             //passwords[1] = "GIFFGAFF";
@@ -33,6 +33,9 @@ namespace UnitTestPasswordCrackerCentralized
             testClass = new Cracking_Test();
         }
 
+        /// <summary>
+        /// This method tests whether the supplied dictionary file exists.
+        /// </summary>
         [TestMethod]
         public void TestIfDictionaryDoesNotExists()
         {
@@ -49,6 +52,9 @@ namespace UnitTestPasswordCrackerCentralized
             }
         }
 
+        /// <summary>
+        /// This method tests whether the buffer content is equal to the content of the actual dictionary-file.
+        /// </summary>
         [TestMethod]
         public void TestBuffer()
         {
@@ -73,7 +79,45 @@ namespace UnitTestPasswordCrackerCentralized
             List<String> comparedList = dictionaryFileList.Except(dictionaryBufferList).ToList();
 
             Assert.AreEqual(0, comparedList.Count);
-
         }
+
+        [TestMethod]
+        public void TestWordVariations()
+        {
+            BlockingCollection<String> dictionaryBuffer = new BlockingCollection<string>();
+            BlockingCollection<String> wordVariationBuffer = new BlockingCollection<string>();
+
+            String wordToTest = "giffgaff";
+            dictionaryBuffer.Add(wordToTest);
+            dictionaryBuffer.CompleteAdding();
+
+            testClass.TestRunWordVariationGenerator(dictionaryBuffer, wordVariationBuffer);
+
+            List<String> bufferWordList = wordVariationBuffer.ToList();
+            List<String> testWordList = new List<string>();
+
+            String plainWord = wordToTest;
+            String upperCaseWord = wordToTest.ToUpper();
+            String capitalizedWord = testClass.CapitalizeString(wordToTest);
+            String reverseWord = testClass.ReverseString(wordToTest);
+            String startDigitWord = testClass.AddStartDigit(wordToTest);
+            String endDigitWord = testClass.AddEndDigit(wordToTest);
+            String startEndDigit = testClass.AddStartEndDigit(wordToTest);
+            
+            testWordList.Add(plainWord);
+            testWordList.Add(upperCaseWord);
+            testWordList.Add(capitalizedWord);
+            testWordList.Add(reverseWord);
+            testWordList.Add(startDigitWord);
+            testWordList.Add(endDigitWord);
+            testWordList.Add(startEndDigit);
+
+            int lort = bufferWordList.Count;
+
+            List<String> comparedList = testWordList.Except(bufferWordList).ToList();
+
+            Assert.AreEqual(0, comparedList.Count);
+        }
+
     }
 }

@@ -103,7 +103,7 @@ namespace PasswordCrackerCentralized
             
         }
 
-        private void RunWordVariationGenerator(BlockingCollection<String> dictionaryBuffer, BlockingCollection<String> wordVariationBuffer)
+        protected void RunWordVariationGenerator(BlockingCollection<String> dictionaryBuffer, BlockingCollection<String> wordVariationBuffer)
         {
             while (!dictionaryBuffer.IsCompleted)
             {
