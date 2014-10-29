@@ -14,6 +14,7 @@ namespace UnitTestPasswordCrackerCentralized
     public class UnitTest1
     {
         private static Cracking_Test testClass;
+        private static TestVerificationMethods testMethods;
 
         [ClassInitialize]
         public static void ClassInitializer(TestContext context)
@@ -32,6 +33,7 @@ namespace UnitTestPasswordCrackerCentralized
 
             //PasswordFileHandler.WritePasswordFile("testPasswords.txt", usernames, passwords);
             testClass = new Cracking_Test();
+            testMethods = new TestVerificationMethods();
         }
 
         /// <summary>
@@ -102,11 +104,11 @@ namespace UnitTestPasswordCrackerCentralized
 
             String plainWord = wordToTest;
             String upperCaseWord = wordToTest.ToUpper();
-            String capitalizedWord = testClass.CapitalizeString(wordToTest);
-            String reverseWord = testClass.ReverseString(wordToTest);
-            String startDigitWord = testClass.AddStartDigit(wordToTest);
-            String endDigitWord = testClass.AddEndDigit(wordToTest);
-            String startEndDigit = testClass.AddStartEndDigit(wordToTest);
+            String capitalizedWord = testMethods.CapitalizeString(wordToTest);
+            String reverseWord = testMethods.ReverseString(wordToTest);
+            String startDigitWord = testMethods.AddStartDigit(wordToTest);
+            String endDigitWord = testMethods.AddEndDigit(wordToTest);
+            String startEndDigit = testMethods.AddStartEndDigit(wordToTest);
             
             testWordList.Add(plainWord);
             testWordList.Add(upperCaseWord);
@@ -138,7 +140,7 @@ namespace UnitTestPasswordCrackerCentralized
             testClass.TestEncryptWord(wordVariationBuffer, encryptedWordBuffer);
 
             byte[] wordToVerifyBytes = encryptedWordBuffer.Take().EncryptedWordInBytes;
-            byte[] verificationWordBytes = testClass.GetSha1(wordToTest);
+            byte[] verificationWordBytes = testMethods.GetSha1(wordToTest);
 
             string wordToVerify = Convert.ToBase64String(verificationWordBytes);
             string verificationWord = Convert.ToBase64String(wordToVerifyBytes);
