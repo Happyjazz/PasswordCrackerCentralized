@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using PasswordCrackerCentralized;
+using PasswordCrackerCentralized.model;
 using PasswordCrackerCentralized.util;
 
 namespace UnitTestPasswordCrackerCentralized
@@ -81,6 +82,9 @@ namespace UnitTestPasswordCrackerCentralized
             Assert.AreEqual(0, comparedList.Count);
         }
 
+        /// <summary>
+        /// This method runs a single word through the RunWordVariationGenerator and uses different methods in the Cracking_Test class to verify that an example of the different word variations exists in the buffer.
+        /// </summary>
         [TestMethod]
         public void TestWordVariations()
         {
@@ -118,6 +122,28 @@ namespace UnitTestPasswordCrackerCentralized
 
             Assert.AreEqual(0, comparedList.Count);
         }
+        /// <summary>
+        /// This method runs a word through the EncryptWord method and uses the GetSha1 method to verify that the word has been encrypted correctly.
+        /// </summary>
+        [TestMethod]
+        public void TestEncryptWord()
+        {
+            BlockingCollection<String> wordVariationBuffer = new BlockingCollection<string>();
+            BlockingCollection<EncryptedWord> encryptedWordBuffer = new BlockingCollection<EncryptedWord>();
 
+            String wordToTest = "giffgaff";
+            wordVariationBuffer.Add(wordToTest);
+            wordVariationBuffer.CompleteAdding();
+
+            testClass.TestEncryptWord(wordVariationBuffer, encryptedWordBuffer);
+
+            byte[] wordToVerifyBytes = encryptedWordBuffer.Take().EncryptedWordInBytes;
+            byte[] verificationWordBytes = testClass.GetSha1(wordToTest);
+
+            string wordToVerify = Convert.ToBase64String(verificationWordBytes);
+            string verificationWord = Convert.ToBase64String(wordToVerifyBytes);
+
+            Assert.AreEqual(wordToVerify, verificationWord);
+        }
     }
 }

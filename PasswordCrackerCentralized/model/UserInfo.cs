@@ -12,8 +12,8 @@ namespace PasswordCrackerCentralized.model
     public class UserInfo
     {
         public String Username { get; set; }
-        public String EntryptedPasswordBase64 { get; set; }
-        public byte[] EntryptedPassword { get; set; }
+        public String EncryptedPasswordBase64 { get; set; }
+        public byte[] EncryptedPassword { get; set; }
 
         public UserInfo(String username, String entryptedPasswordBase64)
         {
@@ -26,13 +26,13 @@ namespace PasswordCrackerCentralized.model
                 throw new ArgumentNullException("entryptedPasswordBase64");
             }
             Username = username;
-            EntryptedPasswordBase64 = entryptedPasswordBase64;
-            EntryptedPassword = Convert.FromBase64String(entryptedPasswordBase64);
+            EncryptedPasswordBase64 = entryptedPasswordBase64;
+            EncryptedPassword = Convert.FromBase64String(entryptedPasswordBase64);
         }
 
         public override string ToString()
         {
-            return Username + ":" + EntryptedPasswordBase64;
+            return Username + ":" + EncryptedPasswordBase64;
         }
     }
 }

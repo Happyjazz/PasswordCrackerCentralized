@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using PasswordCrackerCentralized;
 using PasswordCrackerCentralized.model;
+using PasswordCrackerCentralized.util;
 
 namespace UnitTestPasswordCrackerCentralized
 {
@@ -37,6 +38,12 @@ namespace UnitTestPasswordCrackerCentralized
         public void TestRunWordVariationGenerator(BlockingCollection<String> dictionaryBuffer, BlockingCollection<String> wordVariationBuffer)
         {
             RunWordVariationGenerator(dictionaryBuffer, wordVariationBuffer);
+        }
+
+        public void TestEncryptWord(BlockingCollection<String> wordVariationBuffer,
+            BlockingCollection<EncryptedWord> encryptedWordBuffer)
+        {
+            EncryptWord(wordVariationBuffer, encryptedWordBuffer);
         }
 
         public String CapitalizeString(String word)
@@ -98,6 +105,14 @@ namespace UnitTestPasswordCrackerCentralized
             int endDigit = random.Next(0, 9);
 
             return startDigit + word + endDigit;
+        }
+        public byte[] GetSha1(string value)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(value);
+            SHA1 sha = new SHA1CryptoServiceProvider();
+            byte[] hashInBytes = sha.ComputeHash(bytes);
+
+            return hashInBytes;
         }
     }
 }

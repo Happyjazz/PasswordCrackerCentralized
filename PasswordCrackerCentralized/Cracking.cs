@@ -146,9 +146,8 @@ namespace PasswordCrackerCentralized
             wordVariationBuffer.CompleteAdding();
         }
 
-        
 
-        private void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<EncryptedWord> encryptedWordBuffer)
+        protected void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<EncryptedWord> encryptedWordBuffer)
         {
             while (!wordVariationBuffer.IsCompleted)
             {
@@ -237,7 +236,7 @@ namespace PasswordCrackerCentralized
 
                 foreach (UserInfo userInfo in userInfos)
                 {
-                    if (CompareBytes(userInfo.EntryptedPassword, possiblePassword))
+                    if (CompareBytes(userInfo.EncryptedPassword, possiblePassword))
                     {
                         crackedUsers.Add(new UserInfoClearText(userInfo.Username, encryptedWord.UnencryptedWord));
                     }
