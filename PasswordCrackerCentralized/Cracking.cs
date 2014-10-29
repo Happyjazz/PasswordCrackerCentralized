@@ -82,17 +82,25 @@ namespace PasswordCrackerCentralized
 
         protected void RunDictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
         {
-            Console.WriteLine("Rundictionary started");
-            using (FileStream fs = new FileStream(dictionaryFileName, FileMode.Open, FileAccess.Read))
-            using (StreamReader dictionary = new StreamReader(fs))
+            if (File.Exists(dictionaryFileName))
             {
-                while (!dictionary.EndOfStream)
+                Console.WriteLine("Rundictionary started");
+                using (FileStream fs = new FileStream(dictionaryFileName, FileMode.Open, FileAccess.Read))
+                using (StreamReader dictionary = new StreamReader(fs))
                 {
-                    String dictionaryEntry = dictionary.ReadLine();
-                    dictionaryBuffer.Add(dictionaryEntry);
+                    while (!dictionary.EndOfStream)
+                    {
+                        String dictionaryEntry = dictionary.ReadLine();
+                        dictionaryBuffer.Add(dictionaryEntry);
+                    }
+                    dictionaryBuffer.CompleteAdding();
                 }
-                dictionaryBuffer.CompleteAdding();
             }
+            else
+            {
+                throw new Exception("File does not exist.");
+            }
+            
         }
 
         private void RunWordVariationGenerator(BlockingCollection<String> dictionaryBuffer, BlockingCollection<String> wordVariationBuffer)
