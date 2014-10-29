@@ -41,7 +41,7 @@ namespace PasswordCrackerCentralized
         public void RunCracking(String fileName, String dictionaryFileName)
         {
             stopwatch = Stopwatch.StartNew();
-            int bufferSize = 10000;
+            int bufferSize = 1000000;
 
             List<UserInfo> userInfos = PasswordFileHandler.ReadPasswordFile(fileName);
             List<UserInfoClearText> result = new List<UserInfoClearText>();
@@ -49,32 +49,14 @@ namespace PasswordCrackerCentralized
             List<Task> taskList = new List<Task>();
 
             _dictionaryBuffer = new BlockingCollection<string>(bufferSize);
-            Task dictionaryTask = new Task(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer));
-            dictionaryTask.Start();
-            
-            taskList.Add(dictionaryTask);
-
-            //RunDictionaryReader("webster-dictionary.txt", _dictionaryBuffer);
-
             _wordVariationsBuffer = new BlockingCollection<string>(bufferSize);
-            Task checkVariations = Task.Run(() => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer));
-            taskList.Add(checkVariations);
-
             _encryptedWordBuffer = new BlockingCollection<EncryptedWord>(bufferSize);
-            Task encryptWords = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
-            taskList.Add(encryptWords);
-
             _crackedUsers = new BlockingCollection<UserInfoClearText>();
-            Task compareEncryptedWords =
-                Task.Run(
-                    () =>
-                        CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers));
-            taskList.Add(compareEncryptedWords);
 
-            Task bufferStatusTask = Task.Run(() => BufferStatus());
-            taskList.Add(bufferStatusTask);
-
-            Task.WaitAll(taskList.ToArray());
+            Parallel.Invoke(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer), () => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer), () => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer), () =>
+                        CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers), BufferStatus);
+            
+            
             stopwatch.Stop();
             BufferStatus();
             Console.ReadLine();
