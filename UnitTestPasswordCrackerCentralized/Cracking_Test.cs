@@ -5,6 +5,10 @@ using PasswordCrackerCentralized.model;
 
 namespace UnitTestPasswordCrackerCentralized
 {
+    /// <summary>
+    /// This Class is used as a test-harness, for the unit tests.
+    /// In order to access the private mehods of the Cracking-class, this class is used to return these, instead of making them public and thus changing the running build too radically.
+    /// </summary>
     class Cracking_Test : Cracking
     {
         public BlockingCollection<String> GetDictionaryBuffer()

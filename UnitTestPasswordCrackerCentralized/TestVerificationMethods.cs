@@ -5,6 +5,9 @@ using System.Text;
 
 namespace UnitTestPasswordCrackerCentralized
 {
+    /// <summary>
+    /// This Class is used by the unit tests, to provide alternative methods for generating results to be compared with the actual results.
+    /// </summary>
     class TestVerificationMethods
     {
         public String CapitalizeString(String word)
