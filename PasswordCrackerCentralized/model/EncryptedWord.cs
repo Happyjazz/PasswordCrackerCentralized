@@ -15,7 +15,6 @@ namespace PasswordCrackerCentralized.model
             EncryptedWordInBytes = encryptedWordInBytes;
             UnencryptedWord = unencryptedWord;
 
-
         }
     }
 }

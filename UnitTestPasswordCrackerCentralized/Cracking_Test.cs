@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using PasswordCrackerCentralized;
 using PasswordCrackerCentralized.model;
 
@@ -25,7 +26,7 @@ namespace UnitTestPasswordCrackerCentralized
         }
         public BlockingCollection<UserInfoClearText> GetCrackedUsersBuffer()
         {
-            return _crackedUsers;
+            return _crackedUsersBuffer;
         }
 
         public void TestRunDictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
@@ -44,6 +45,10 @@ namespace UnitTestPasswordCrackerCentralized
             EncryptWord(wordVariationBuffer, encryptedWordBuffer);
         }
 
-        
+        public void TestCompareEncryptedPassword(BlockingCollection<EncryptedWord> encryptedWordBuffer,
+            IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers)
+        {
+            CompareEncryptedPassword(encryptedWordBuffer, userInfos, crackedUsers);
+        }
     }
 }

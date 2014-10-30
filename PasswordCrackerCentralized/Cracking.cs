@@ -22,7 +22,7 @@ namespace PasswordCrackerCentralized
         protected BlockingCollection<String> _dictionaryBuffer;
         protected BlockingCollection<String> _wordVariationsBuffer;
         protected BlockingCollection<EncryptedWord> _encryptedWordBuffer;
-        protected BlockingCollection<UserInfoClearText> _crackedUsers;
+        protected BlockingCollection<UserInfoClearText> _crackedUsersBuffer;
 
         private Stopwatch stopwatch;
 
@@ -45,7 +45,7 @@ namespace PasswordCrackerCentralized
             _dictionaryBuffer = new BlockingCollection<string>(bufferSize);
             _wordVariationsBuffer = new BlockingCollection<string>(bufferSize);
             _encryptedWordBuffer = new BlockingCollection<EncryptedWord>(bufferSize);
-            _crackedUsers = new BlockingCollection<UserInfoClearText>();
+            _crackedUsersBuffer = new BlockingCollection<UserInfoClearText>();
 
             //Task 1 - Read from dictionary and put into dictionaryBuffer
             Task dictionaryTask = Task.Run(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer));
@@ -69,7 +69,7 @@ namespace PasswordCrackerCentralized
             Task compareEncryptedWords =
                 Task.Run(
                     () =>
-                        CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers));
+                        CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsersBuffer));
             taskList.Add(compareEncryptedWords);
 
             //Task 5 - Delivers the output of the console
@@ -186,7 +186,7 @@ namespace PasswordCrackerCentralized
         /// </summary>
         private void BufferStatus()
         {
-            while (!_dictionaryBuffer.IsCompleted && !_wordVariationsBuffer.IsCompleted && !_encryptedWordBuffer.IsCompleted && !_crackedUsers.IsCompleted)
+            while (!_dictionaryBuffer.IsCompleted && !_wordVariationsBuffer.IsCompleted && !_encryptedWordBuffer.IsCompleted && !_crackedUsersBuffer.IsCompleted)
             {
                 Console.Clear();
                 Console.WriteLine("Buffer Name \t\tWords in buffer");
@@ -194,12 +194,12 @@ namespace PasswordCrackerCentralized
                 Console.WriteLine("DictionaryBuffer: \t{0}",_dictionaryBuffer.Count);
                 Console.WriteLine("WordVariationBuffer: \t{0}", _wordVariationsBuffer.Count);
                 Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
-                Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsers.Count);
+                Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsersBuffer.Count);
                 Console.WriteLine("Time elapsed: \t\t{0}", stopwatch.Elapsed);
                 Console.WriteLine();
                 Console.WriteLine("User Name \t\tPassword");
                 Console.WriteLine("---------------------------------------");
-                foreach (var e in _crackedUsers)
+                foreach (var e in _crackedUsersBuffer)
                 {
                     if (e.UserName.Length <= 6)
                     {
@@ -224,12 +224,12 @@ namespace PasswordCrackerCentralized
             Console.WriteLine("DictionaryBuffer: \t{0}", _dictionaryBuffer.Count);
             Console.WriteLine("WordVariationBuffer: \t{0}", _wordVariationsBuffer.Count);
             Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
-            Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsers.Count);
+            Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsersBuffer.Count);
             Console.WriteLine("Time elapsed: \t\t{0}", stopwatch.Elapsed);
             Console.WriteLine();
             Console.WriteLine("User Name \t\tPassword");
             Console.WriteLine("---------------------------------------");
-            foreach (var e in _crackedUsers)
+            foreach (var e in _crackedUsersBuffer)
             {
                 if (e.UserName.Length <= 6)
                 {
@@ -254,7 +254,7 @@ namespace PasswordCrackerCentralized
         /// <param name="encryptedWordBuffer">The buffer containing the encrypted words as Strings</param>
         /// <param name="userInfos">The user name and password that are being cracked, as UserInfo</param>
         /// <param name="crackedUsers">The buffer containing the cracked user names and passwords, as UserInfoClearText</param>
-        private void CompareEncryptedPassword(BlockingCollection<EncryptedWord> encryptedWordBuffer, IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers)
+        protected void CompareEncryptedPassword(BlockingCollection<EncryptedWord> encryptedWordBuffer, IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers)
         {
             while (!encryptedWordBuffer.IsCompleted)
             {

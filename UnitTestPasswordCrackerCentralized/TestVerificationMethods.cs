@@ -78,5 +78,11 @@ namespace UnitTestPasswordCrackerCentralized
 
             return hashInBytes;
         }
+
+        public bool CompareByteArrays(byte[] byteArray1, byte[] byteArray2)
+        {
+            return byteArray1.SequenceEqual(byteArray2);
+        }
+
     }
 }

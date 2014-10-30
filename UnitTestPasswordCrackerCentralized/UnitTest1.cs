@@ -23,14 +23,16 @@ namespace UnitTestPasswordCrackerCentralized
 
         /// <summary>
         /// This method tests whether the supplied dictionary file exists.
+        /// Success is achieved when the file is not found.
         /// </summary>
         [TestMethod]
         public void TestIfDictionaryDoesNotExists()
         {
+            string fileNameToFind = "FileDoesNotExist.txt";
             try
             {
                 BlockingCollection<String> dictionaryBuffer = new BlockingCollection<string>();
-                testClass.TestRunDictionaryReader("FileDoesNotExist.txt", dictionaryBuffer);
+                testClass.TestRunDictionaryReader(fileNameToFind, dictionaryBuffer);
 
                 Assert.Fail();
             }
@@ -42,6 +44,7 @@ namespace UnitTestPasswordCrackerCentralized
 
         /// <summary>
         /// This method tests whether the buffer content is equal to the content of the actual dictionary-file.
+        /// Succes is achieved when the buffer-content matches the file-content.
         /// </summary>
         [TestMethod]
         public void TestBuffer()
@@ -71,6 +74,7 @@ namespace UnitTestPasswordCrackerCentralized
 
         /// <summary>
         /// This method runs a single word through the RunWordVariationGenerator and uses different methods in the Cracking_Test class to verify that an example of the different word variations exists in the buffer.
+        /// Success is when the buffer of variations contain all of the check-variations generated in testWordList.
         /// </summary>
         [TestMethod]
         public void TestWordVariations()
@@ -103,8 +107,6 @@ namespace UnitTestPasswordCrackerCentralized
             testWordList.Add(endDigitWord);
             testWordList.Add(startEndDigit);
 
-            int lort = bufferWordList.Count;
-
             List<String> comparedList = testWordList.Except(bufferWordList).ToList();
 
             Assert.AreEqual(0, comparedList.Count);
@@ -134,6 +136,76 @@ namespace UnitTestPasswordCrackerCentralized
             Assert.AreEqual(wordToVerify, verificationWord);
         }
 
+        /// <summary>
+        /// This method tests whether the method CompareEncryptedWords can properly compare an encrypted word, in bytes, to the information held in a UserInfo-class.
+        /// The words are supplied in the password and wordvariation variables.
+        /// This unit test succeeds when the two variables above match.
+        /// </summary>
+        [TestMethod]
+        public void TestCompareEncryptedWordsMatch()
+        {
+            BlockingCollection<EncryptedWord> encryptedWordBuffer = new BlockingCollection<EncryptedWord>();
+            BlockingCollection<UserInfoClearText> crackedUsersBuffer = new BlockingCollection<UserInfoClearText>();
 
+            string userName = "Martin";
+            string password = "giffgaff";
+            byte[] encryptedPasswordInBytes = testMethods.GetSha1(password);
+            string encryptedPasswordBase64 = Convert.ToBase64String(encryptedPasswordInBytes);
+
+            List<UserInfo> userInfos = new List<UserInfo>();
+            UserInfo userInfo = new UserInfo(userName, encryptedPasswordBase64);
+            userInfos.Add(userInfo);
+
+            string wordVariation = password;
+            byte[] encryptedwordVariationInBytes = testMethods.GetSha1(wordVariation);
+
+            EncryptedWord encryptedWord = new EncryptedWord(encryptedwordVariationInBytes, wordVariation);
+
+            encryptedWordBuffer.Add(encryptedWord);
+            encryptedWordBuffer.CompleteAdding();
+
+            testClass.TestCompareEncryptedPassword(encryptedWordBuffer, userInfos, crackedUsersBuffer);
+
+            bool actualMatch = crackedUsersBuffer.Count == 1;
+            bool expectedMatch = testMethods.CompareByteArrays(userInfo.EncryptedPassword, encryptedPasswordInBytes);
+
+            Assert.AreEqual(expectedMatch, actualMatch);
+        }
+
+        /// <summary>
+        /// This method tests whether the method CompareEncryptedWords can properly compare an encrypted word, in bytes, to the information held in a UserInfo-class.
+        /// The words are supplied in the password and wordvariation variables.
+        /// This unit test succeeds when the two variables above do not match.
+        /// </summary>
+        [TestMethod]
+        public void TestCompareEncryptedWordsNoMatch()
+        {
+            BlockingCollection<EncryptedWord> encryptedWordBuffer = new BlockingCollection<EncryptedWord>();
+            BlockingCollection<UserInfoClearText> crackedUsersBuffer = new BlockingCollection<UserInfoClearText>();
+
+            string userName = "Martin";
+            string password = "giffgaff";
+            byte[] encryptedPasswordInBytes = testMethods.GetSha1(password);
+            string encryptedPasswordBase64 = Convert.ToBase64String(encryptedPasswordInBytes);
+
+            List<UserInfo> userInfos = new List<UserInfo>();
+            UserInfo userInfo = new UserInfo(userName, encryptedPasswordBase64);
+            userInfos.Add(userInfo);
+
+            string wordVariation = "lightbearer";
+            byte[] encryptedwordVariationInBytes = testMethods.GetSha1(wordVariation);
+
+            EncryptedWord encryptedWord = new EncryptedWord(encryptedwordVariationInBytes, wordVariation);
+
+            encryptedWordBuffer.Add(encryptedWord);
+            encryptedWordBuffer.CompleteAdding();
+
+            testClass.TestCompareEncryptedPassword(encryptedWordBuffer, userInfos, crackedUsersBuffer);
+
+            bool actualMatch = crackedUsersBuffer.Count == 1;
+            bool expectedMatch = testMethods.CompareByteArrays(userInfo.EncryptedPassword, encryptedPasswordInBytes);
+
+            Assert.AreNotEqual(expectedMatch, actualMatch);
+        }
     }
 }
