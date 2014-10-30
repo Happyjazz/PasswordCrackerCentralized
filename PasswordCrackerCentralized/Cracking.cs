@@ -1,7 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
-using System.Security.AccessControl;
 using System.Threading;
 using System.Threading.Tasks;
 using PasswordCrackerCentralized.model;
@@ -38,42 +36,43 @@ namespace PasswordCrackerCentralized
         public void RunCracking(String fileName, String dictionaryFileName)
         {
             stopwatch = Stopwatch.StartNew();
-            int bufferSize = 1000000;
 
             List<UserInfo> userInfos = PasswordFileHandler.ReadPasswordFile(fileName);
             List<Task> taskList = new List<Task>();
 
+            //Initialization of the buffers
+            int bufferSize = 1000000;
             _dictionaryBuffer = new BlockingCollection<string>(bufferSize);
+            _wordVariationsBuffer = new BlockingCollection<string>(bufferSize);
+            _encryptedWordBuffer = new BlockingCollection<EncryptedWord>(bufferSize);
+            _crackedUsers = new BlockingCollection<UserInfoClearText>();
+
+            //Task 1 - Read from dictionary and put into dictionaryBuffer
             Task dictionaryTask = Task.Run(() => RunDictionaryReader(dictionaryFileName, _dictionaryBuffer));
             taskList.Add(dictionaryTask);
 
-            _wordVariationsBuffer = new BlockingCollection<string>(bufferSize);
+            //Task 2 - Read from dictionaryBuffer, generate variations of the words and put them into the wordVariationsBuffer
             Task checkVariations = Task.Run(() => RunWordVariationGenerator(_dictionaryBuffer, _wordVariationsBuffer));
             taskList.Add(checkVariations);
 
-            _encryptedWordBuffer = new BlockingCollection<EncryptedWord>(bufferSize);
-            Task encryptWords1 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
-            taskList.Add(encryptWords1);
+            //Task 3 - Read from the wordVariationsBuffer and calculate a SHA1 hash for each word
+            //Since the bottleneck of the program is this task, more tasks can be added for increased CPU-usage
+            int numberOfEncryptionTasks = 5;
 
-            Task encryptWords2 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
-            taskList.Add(encryptWords2);
+            for (int i = 0; i < numberOfEncryptionTasks; i++)
+            {
+                Task encryptWords = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
+                taskList.Add(encryptWords);
+            }
 
-            Task encryptWords3 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
-            taskList.Add(encryptWords3);
-            
-            Task encryptWords4 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
-            taskList.Add(encryptWords4);
-
-            Task encryptWords5 = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
-            taskList.Add(encryptWords5);
-
-            _crackedUsers = new BlockingCollection<UserInfoClearText>();
+            //Task 4 - Take each encrypted word and compare it to the encrypted password og each user in the password file
             Task compareEncryptedWords =
                 Task.Run(
                     () =>
                         CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsers));
             taskList.Add(compareEncryptedWords);
 
+            //Task 5 - Delivers the output of the console
             Task bufferStatusTask = Task.Run(() => BufferStatus());
             taskList.Add(bufferStatusTask);
 
@@ -84,6 +83,11 @@ namespace PasswordCrackerCentralized
             Console.ReadLine();
         }
 
+        /// <summary>
+        /// This method takes all the word of txt-file and adds it to a BlockingCollection
+        /// </summary>
+        /// <param name="dictionaryFileName">The filename of the txt-file containing the dictionary</param>
+        /// <param name="dictionaryBuffer">The buffer to hold all words from the dictionary</param>
         protected void RunDictionaryReader(String dictionaryFileName, BlockingCollection<String> dictionaryBuffer)
         {
             if (File.Exists(dictionaryFileName))
@@ -107,6 +111,11 @@ namespace PasswordCrackerCentralized
             
         }
 
+        /// <summary>
+        /// This method takes each word contained in a BlockingCollection and generates 307 variations of it.
+        /// </summary>
+        /// <param name="dictionaryBuffer">The buffer containing the words to be variated</param>
+        /// <param name="wordVariationBuffer">The buffer that holds the variated words</param>
         protected void RunWordVariationGenerator(BlockingCollection<String> dictionaryBuffer, BlockingCollection<String> wordVariationBuffer)
         {
             while (!dictionaryBuffer.IsCompleted)
@@ -150,7 +159,11 @@ namespace PasswordCrackerCentralized
             wordVariationBuffer.CompleteAdding();
         }
 
-
+        /// <summary>
+        /// This method takes the words contained in a BlockingCollection, generates a SHA1 hash from them and sends them to a new BlockingCollection.
+        /// </summary>
+        /// <param name="wordVariationBuffer">The buffer containing the word to be encrypted</param>
+        /// <param name="encryptedWordBuffer">The buffer to hold the encrypted words</param>
         protected void EncryptWord(BlockingCollection<String> wordVariationBuffer, BlockingCollection<EncryptedWord> encryptedWordBuffer)
         {
             HashAlgorithm messageDigest = new SHA1CryptoServiceProvider();
@@ -168,6 +181,9 @@ namespace PasswordCrackerCentralized
 
         }
 
+        /// <summary>
+        /// This method provides a UI to keep track of the progress of the runCracking method.
+        /// </summary>
         private void BufferStatus()
         {
             while (!_dictionaryBuffer.IsCompleted && !_wordVariationsBuffer.IsCompleted && !_encryptedWordBuffer.IsCompleted && !_crackedUsers.IsCompleted)
@@ -232,6 +248,12 @@ namespace PasswordCrackerCentralized
             Console.WriteLine("DONE!");
         }
 
+        /// <summary>
+        /// This methods compares a SHA1-hash from a BlockingCollection, with a supplied UserInfo, to check whether the encrypted password matches the SHA1-hash.
+        /// </summary>
+        /// <param name="encryptedWordBuffer">The buffer containing the encrypted words as Strings</param>
+        /// <param name="userInfos">The user name and password that are being cracked, as UserInfo</param>
+        /// <param name="crackedUsers">The buffer containing the cracked user names and passwords, as UserInfoClearText</param>
         private void CompareEncryptedPassword(BlockingCollection<EncryptedWord> encryptedWordBuffer, IEnumerable<UserInfo> userInfos, BlockingCollection<UserInfoClearText> crackedUsers)
         {
             while (!encryptedWordBuffer.IsCompleted)

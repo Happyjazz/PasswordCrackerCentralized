@@ -4,9 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using PasswordCrackerCentralized;
 using PasswordCrackerCentralized.model;
-using PasswordCrackerCentralized.util;
 
 namespace UnitTestPasswordCrackerCentralized
 {
@@ -19,19 +17,6 @@ namespace UnitTestPasswordCrackerCentralized
         [ClassInitialize]
         public static void ClassInitializer(TestContext context)
         {
-            //string[] usernames = new string[4];
-            //usernames[0] = "Peter";
-            //usernames[1] = "Martin";
-            //usernames[2] = "Delfs";
-            //usernames[3] = "Brian";
-
-            //string[] passwords = new string[4];
-            //passwords[0] = "95Melanochroi5";
-            //passwords[1] = "GIFFGAFF";
-            //passwords[2] = "gniltfig";
-            //passwords[3] = "Womanbody";
-
-            //PasswordFileHandler.WritePasswordFile("testPasswords.txt", usernames, passwords);
             testClass = new Cracking_Test();
             testMethods = new TestVerificationMethods();
         }
@@ -124,6 +109,7 @@ namespace UnitTestPasswordCrackerCentralized
 
             Assert.AreEqual(0, comparedList.Count);
         }
+        
         /// <summary>
         /// This method runs a word through the EncryptWord method and uses the GetSha1 method to verify that the word has been encrypted correctly.
         /// </summary>
@@ -147,5 +133,7 @@ namespace UnitTestPasswordCrackerCentralized
 
             Assert.AreEqual(wordToVerify, verificationWord);
         }
+
+
     }
 }
