@@ -31,9 +31,13 @@ namespace PasswordCrackerCentralized
         }
 
         /// <summary>
-        /// Runs the password cracking algorithm
+        /// Runs the cracking algorithm.
         /// </summary>
-        public void RunCracking(String fileName, String dictionaryFileName)
+        /// <param name="fileName">Name of the Password-file to be cracked</param>
+        /// <param name="dictionaryFileName">Name of the Dictionary-file to be used</param>
+        /// <param name="numberOfEncryptionTasks">Number of tasks to be used for running the encryption</param>
+        /// <param name="uiRefreshRate">The refresh rate of the UI, in MS</param>
+        public void RunCracking(String fileName, String dictionaryFileName, int numberOfEncryptionTasks, int uiRefreshRate)
         {
             stopwatch = Stopwatch.StartNew();
 
@@ -57,8 +61,6 @@ namespace PasswordCrackerCentralized
 
             //Task 3 - Read from the wordVariationsBuffer and calculate a SHA1 hash for each word
             //Since the bottleneck of the program is this task, more tasks can be added for increased CPU-usage
-            int numberOfEncryptionTasks = 5;
-
             for (int i = 0; i < numberOfEncryptionTasks; i++)
             {
                 Task encryptWords = Task.Run(() => EncryptWord(_wordVariationsBuffer, _encryptedWordBuffer));
@@ -72,14 +74,17 @@ namespace PasswordCrackerCentralized
                         CompareEncryptedPassword(_encryptedWordBuffer, userInfos, _crackedUsersBuffer));
             taskList.Add(compareEncryptedWords);
 
-            //Task 5 - Delivers the output of the console
-            Task bufferStatusTask = Task.Run(() => BufferStatus());
+            //Task 5 - Delivers the output of the console.
+            //RefreshRate is how often the UI is updated, in ms.
+            Task bufferStatusTask = Task.Run(() => BufferStatus(uiRefreshRate));
             taskList.Add(bufferStatusTask);
 
 
             Task.WaitAll(taskList.ToArray());
             stopwatch.Stop();
             BufferStatus();
+            Console.WriteLine("DONE!");
+
             Console.ReadLine();
         }
 
@@ -159,6 +164,7 @@ namespace PasswordCrackerCentralized
             wordVariationBuffer.CompleteAdding();
         }
 
+        
         /// <summary>
         /// This method takes the words contained in a BlockingCollection, generates a SHA1 hash from them and sends them to a new BlockingCollection.
         /// </summary>
@@ -186,38 +192,6 @@ namespace PasswordCrackerCentralized
         /// </summary>
         private void BufferStatus()
         {
-            while (!_dictionaryBuffer.IsCompleted && !_wordVariationsBuffer.IsCompleted && !_encryptedWordBuffer.IsCompleted && !_crackedUsersBuffer.IsCompleted)
-            {
-                Console.Clear();
-                Console.WriteLine("Buffer Name \t\tWords in buffer");
-                Console.WriteLine("---------------------------------------");
-                Console.WriteLine("DictionaryBuffer: \t{0}",_dictionaryBuffer.Count);
-                Console.WriteLine("WordVariationBuffer: \t{0}", _wordVariationsBuffer.Count);
-                Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
-                Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsersBuffer.Count);
-                Console.WriteLine("Time elapsed: \t\t{0}", stopwatch.Elapsed);
-                Console.WriteLine();
-                Console.WriteLine("User Name \t\tPassword");
-                Console.WriteLine("---------------------------------------");
-                foreach (var e in _crackedUsersBuffer)
-                {
-                    if (e.UserName.Length <= 6)
-                    {
-                        Console.WriteLine("{0} \t\t\t{1}", e.UserName, e.Password);
-                    }
-                    else if (e.UserName.Length >= 11)
-                    {
-                        Console.WriteLine("{0} \t{1}", e.UserName, e.Password);
-                    }
-                    else
-                    {
-                        Console.WriteLine("{0} \t\t{1}", e.UserName, e.Password);
-                    }
-                }
-                Thread.Sleep(100);
-            }
-
-            Thread.Sleep(1000);
             Console.Clear();
             Console.WriteLine("Buffer Name \t\tWords in buffer");
             Console.WriteLine("---------------------------------------");
@@ -245,7 +219,43 @@ namespace PasswordCrackerCentralized
                 }
             }
             Console.WriteLine();
-            Console.WriteLine("DONE!");
+        }
+
+        /// <summary>
+        /// This method overload provides a UI, that automatically refreshes at the supplied interval, as long as the buffers are not empty, to keep track of the progress of the runCracking method.
+        /// </summary>
+        private void BufferStatus(int refreshRate)
+        {
+            while (!_dictionaryBuffer.IsCompleted && !_wordVariationsBuffer.IsCompleted && !_encryptedWordBuffer.IsCompleted && !_crackedUsersBuffer.IsCompleted)
+            {
+                Console.Clear();
+                Console.WriteLine("Buffer Name \t\tWords in buffer");
+                Console.WriteLine("---------------------------------------");
+                Console.WriteLine("DictionaryBuffer: \t{0}", _dictionaryBuffer.Count);
+                Console.WriteLine("WordVariationBuffer: \t{0}", _wordVariationsBuffer.Count);
+                Console.WriteLine("EncryptedWordBuffer: \t{0}", _encryptedWordBuffer.Count);
+                Console.WriteLine("CrackedUsersBuffer: \t{0}", _crackedUsersBuffer.Count);
+                Console.WriteLine("Time elapsed: \t\t{0}", stopwatch.Elapsed);
+                Console.WriteLine();
+                Console.WriteLine("User Name \t\tPassword");
+                Console.WriteLine("---------------------------------------");
+                foreach (var e in _crackedUsersBuffer)
+                {
+                    if (e.UserName.Length <= 6)
+                    {
+                        Console.WriteLine("{0} \t\t\t{1}", e.UserName, e.Password);
+                    }
+                    else if (e.UserName.Length >= 11)
+                    {
+                        Console.WriteLine("{0} \t{1}", e.UserName, e.Password);
+                    }
+                    else
+                    {
+                        Console.WriteLine("{0} \t\t{1}", e.UserName, e.Password);
+                    }
+                }
+                Thread.Sleep(refreshRate);
+            }
         }
 
         /// <summary>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -69,7 +70,12 @@ namespace UnitTestPasswordCrackerCentralized
 
             List<String> comparedList = dictionaryFileList.Except(dictionaryBufferList).ToList();
 
-            Assert.AreEqual(0, comparedList.Count);
+            int expectedMismatches = 0;
+            int actualMismatches = comparedList.Count;
+
+            Debug.Print("Actual mismatches: {0} Expected mismatches: {1}", actualMismatches, expectedMismatches);
+
+            Assert.AreEqual(expectedMismatches, actualMismatches);
         }
 
         /// <summary>
@@ -109,7 +115,12 @@ namespace UnitTestPasswordCrackerCentralized
 
             List<String> comparedList = testWordList.Except(bufferWordList).ToList();
 
-            Assert.AreEqual(0, comparedList.Count);
+            int expectedMismatches = 0;
+            int actualMismatches = comparedList.Count;
+
+            Debug.Print("Actual mismatches: {0} Expected mismatches: {1}", actualMismatches, expectedMismatches);
+
+            Assert.AreEqual(expectedMismatches, actualMismatches);
         }
         
         /// <summary>
@@ -132,6 +143,8 @@ namespace UnitTestPasswordCrackerCentralized
 
             string wordToVerify = Convert.ToBase64String(verificationWordBytes);
             string verificationWord = Convert.ToBase64String(wordToVerifyBytes);
+
+            Debug.Print("Actual: {0} Expected: {1}", wordToVerify, verificationWord);
 
             Assert.AreEqual(wordToVerify, verificationWord);
         }
@@ -169,6 +182,8 @@ namespace UnitTestPasswordCrackerCentralized
             bool actualMatch = crackedUsersBuffer.Count == 1;
             bool expectedMatch = testMethods.CompareByteArrays(userInfo.EncryptedPassword, encryptedPasswordInBytes);
 
+            Debug.Print("Actual: {0} Expected: {1}", actualMatch.ToString(), expectedMatch.ToString());
+
             Assert.AreEqual(expectedMatch, actualMatch);
         }
 
@@ -204,6 +219,8 @@ namespace UnitTestPasswordCrackerCentralized
 
             bool actualMatch = crackedUsersBuffer.Count == 1;
             bool expectedMatch = testMethods.CompareByteArrays(userInfo.EncryptedPassword, encryptedPasswordInBytes);
+
+            Debug.Print("Actual: {0} Expected: {1}", actualMatch.ToString(), expectedMatch.ToString());
 
             Assert.AreNotEqual(expectedMatch, actualMatch);
         }
